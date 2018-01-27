@@ -9,11 +9,7 @@ Once per day when starting a new shell, commitihag will check `~/.dotfiles` for 
 
 If the state is dirty, commitihag will gently remind you to commit your changes:
 
-```
-commitihag found uncommitted changes in:
-    ~/.dotfiles
-Checking again tomorrow...
-```
+![Screenshot](screenshot.png)
 
 
 Usage
