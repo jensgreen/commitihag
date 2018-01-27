@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -euo pipefail
+
+now=$(date -u +%s)
+if [ -e ~/.commitihag ]; then
+   nextcheck=$(<~/.commitihag)
+else
+   nextcheck="$now"
+fi
+
+scriptname=$(basename "$0")
+gitdir=~/.dotfiles
+
+if [ "$nextcheck" -le "$now" ]; then
+   tomorrow=$(date -u -v +1d +%s)
+
+   if [ -n "$(git -C "$gitdir" status --porcelain)" ]; then
+      # Convert /home/$USER/... to ~/...
+      pushd "$gitdir" > /dev/null
+      gitdir_pretty=$(dirs +0)
+      popd > /dev/null
+
+      >&2 echo "$scriptname found uncommitted changes in:"
+      >&2 echo "    $gitdir_pretty"
+      # >&2 echo "$scriptname: Snoozing until tomorrow"
+      >&2 echo "Checking again tomorrow..."
+      >&2 echo
+   fi
+
+   echo "$tomorrow" > ~/.commitihag
+fi
