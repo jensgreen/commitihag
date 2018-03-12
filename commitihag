@@ -13,7 +13,8 @@ scriptname=$(basename "$0")
 gitdir=~/.dotfiles
 
 if [ "$nextcheck" -le "$now" ]; then
-   tomorrow=$(date -v +1d +%s)
+   # Check again after 7 AM tomorrow
+   tomorrow=$(date -v+1d -v7H +%s)
 
    if [ -n "$(git -C "$gitdir" status --porcelain)" ]; then
       # Convert /home/$USER/... to ~/...
@@ -23,7 +24,6 @@ if [ "$nextcheck" -le "$now" ]; then
 
       >&2 echo "$scriptname found uncommitted changes in:"
       >&2 echo "    $gitdir_pretty"
-      # >&2 echo "$scriptname: Snoozing until tomorrow"
       >&2 echo "Checking again tomorrow..."
       >&2 echo
    fi
