@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-now=$(date -u +%s)
+now=$(date +%s)
 if [ -e ~/.commitihag ]; then
    nextcheck=$(<~/.commitihag)
 else
@@ -13,7 +13,7 @@ scriptname=$(basename "$0")
 gitdir=~/.dotfiles
 
 if [ "$nextcheck" -le "$now" ]; then
-   tomorrow=$(date -u -v +1d +%s)
+   tomorrow=$(date -v +1d +%s)
 
    if [ -n "$(git -C "$gitdir" status --porcelain)" ]; then
       # Convert /home/$USER/... to ~/...
