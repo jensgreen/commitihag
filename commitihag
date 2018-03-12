@@ -22,10 +22,10 @@ if [ "$nextcheck" -le "$now" ]; then
       gitdir_pretty=$(dirs +0)
       popd > /dev/null
 
-      >&2 echo "$scriptname found uncommitted changes in:"
-      >&2 echo "    $gitdir_pretty"
-      >&2 echo "Checking again tomorrow..."
-      >&2 echo
+      echo "$scriptname found uncommitted changes in:"
+      echo "    $gitdir_pretty"
+      echo "Checking again tomorrow..."
+      echo
    fi
 
    echo "$tomorrow" > ~/.commitihag
