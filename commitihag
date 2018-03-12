@@ -14,7 +14,8 @@ gitdir=~/.dotfiles
 
 if [ "$nextcheck" -le "$now" ]; then
    # Check again after 7 AM tomorrow
-   tomorrow=$(date -v+1d -v7H -v0M -v0S +%s)
+   # Try BSD date first, then GNU coreutils date
+   tomorrow=$(date -v+1d -v7H -v0M -v0S +%s 2>/dev/null) || tomorrow=$(date --date='07:00 Tomorrow' +%s 2>/dev/null)
 
    if [ -n "$(git -C "$gitdir" status --porcelain)" ]; then
       # Convert /home/$USER/... to ~/...
