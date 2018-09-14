@@ -9,7 +9,6 @@ else
    nextcheck="$now"
 fi
 
-scriptname=$(basename "$0")
 gitdir=~/.dotfiles
 
 if [ "$nextcheck" -le "$now" ]; then
@@ -23,10 +22,7 @@ if [ "$nextcheck" -le "$now" ]; then
       gitdir_pretty=$(dirs +0)
       popd > /dev/null
 
-      echo "$scriptname found uncommitted changes in:"
-      echo "    $gitdir_pretty"
-      echo "Checking again tomorrow..."
-      echo
+      echo "❌ $gitdir_pretty contains uncommitted changes"
    fi
 
    echo "$tomorrow" > ~/.commitihag
