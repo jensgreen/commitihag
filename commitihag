@@ -5,7 +5,13 @@ shopt -s nullglob
 
 gitdir=~/.dotfiles
 now="$(date +%s)"
-lastcheck="$(stat -f %m ~/.commitihag)"
+
+# Create a config (yesterday) if missing
+if [ ! -f ~/.commitihagrc ]; then
+    touch -m -t "$(date -r "$((24 * 60 * 60 + 1))" +%Y%m%d%H%M.%S)" ~/.commitihagrc
+fi
+
+lastcheck="$(stat -f %m ~/.commitihagrc)"
 
 # More than 24h since last check?
 if [ $((now - lastcheck)) -gt $((24 * 60 * 60)) ]; then
@@ -28,11 +34,11 @@ if [ $((now - lastcheck)) -gt $((24 * 60 * 60)) ]; then
 
 	# Find the IGNORE line in config file and get ignore glob.
 	# Example ignoring vimrc and VS Code's settings.json, keybindings.json:
-	# >$ cat ~/.commitihag
+	# >$ cat ~/.commitihagrc
 	# >IGNORE=vimrc Library/Application\ Support/Code/User/*.json
 	#
 	# Info on globs and reading input: https://stackoverflow.com/a/37426132
-	IFS=$' \t\n' read -a ignore_globs < <(grep '^IGNORE=' ~/.commitihag | cut -c 8-)
+	IFS=$' \t\n' read -a ignore_globs < <(grep '^IGNORE=' ~/.commitihagrc | cut -c 8-)
 	IFS=''
 	for glob in "${ignore_globs[@]}"; do
 	    ignore_files+=( $glob )
@@ -54,5 +60,5 @@ if [ $((now - lastcheck)) -gt $((24 * 60 * 60)) ]; then
     fi
     # Set last checked time (= now) as mtime
     # TODO GNU compatibility
-    touch -m -t "$(date -r "$now" +%Y%m%d%H%M.%S)" ~/.commitihag
+    touch -m -t "$(date -r "$now" +%Y%m%d%H%M.%S)" ~/.commitihagrc
 fi
