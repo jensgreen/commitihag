@@ -5,6 +5,12 @@ shopt -s nullglob
 
 gitdir=~/.dotfiles
 now="$(date +%s)"
+
+# Create a config (yesterday) if missing
+if [ ! -f ~/.commitihagrc ]; then
+    touch -m -t "$(date -r "$((24 * 60 * 60 + 1))" +%Y%m%d%H%M.%S)" ~/.commitihagrc
+fi
+
 lastcheck="$(stat -f %m ~/.commitihagrc)"
 
 # More than 24h since last check?
