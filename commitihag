@@ -2,28 +2,21 @@
 
 set -euo pipefail
 
-now=$(date +%s)
-if [ -e ~/.commitihag ]; then
-   nextcheck=$(<~/.commitihag)
-else
-   nextcheck="$now"
-fi
+now="$(date +%s)"
+lastcheck="$(stat -f %m ~/.commitihag)"
 
-gitdir=~/.dotfiles
+if [ $((now - lastcheck)) -gt $((24 * 60 * 60)) ]; then
+	# More than 24h since last check
+	gitdir=~/.dotfiles
+	if [ -n "$(git -C "$gitdir" status --porcelain)" ]; then
+	   # Convert /home/$USER/... to ~/...
+	   pushd "$gitdir" > /dev/null
+	   gitdir_pretty=$(dirs +0)
+	   popd > /dev/null
 
-if [ "$nextcheck" -le "$now" ]; then
-   # Check again after 7 AM tomorrow
-   # Try BSD date first, then GNU coreutils date
-   tomorrow=$(date -v+1d -v7H -v0M -v0S +%s 2>/dev/null) || tomorrow=$(date --date='07:00 Tomorrow' +%s 2>/dev/null)
+	   echo "❌ $gitdir_pretty contains uncommitted changes"
+	fi
 
-   if [ -n "$(git -C "$gitdir" status --porcelain)" ]; then
-      # Convert /home/$USER/... to ~/...
-      pushd "$gitdir" > /dev/null
-      gitdir_pretty=$(dirs +0)
-      popd > /dev/null
-
-      echo "❌ $gitdir_pretty contains uncommitted changes"
-   fi
-
-   echo "$tomorrow" > ~/.commitihag
+	# Set last checked time (= now) as mtime
+	touch -m -t "$(date -r "$now" +%Y%m%d%H%M.%S)" ~/.commitihag
 fi
