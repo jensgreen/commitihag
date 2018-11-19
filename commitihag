@@ -5,27 +5,27 @@ shopt -s nullglob
 
 gitdir=~/.dotfiles
 now="$(date +%s)"
-now_hour="$(date -r "$now" +%k)"
-now_touch_formatted="$(date -r "$now" +%Y%m%d%H%M.%S)"
+# Try BSD date first, then GNU coreutils date (because I use a mac)
+now_hour="$(date -r "$now" +%k 2>/dev/null || date --date=@"$now" +%k)"
+now_touch_formatted="$(date -r "$now" +%Y%m%d%H%M.%S 2>/dev/null || date --date=@"$now" +%Y%m%d%H%M.%S)"
 
 # Create a config if missing
 if [ ! -f ~/.commitihagrc ]; then
     touch -m -t "$now_touch_formatted" ~/.commitihagrc
 fi
 
-lastcheck="$(stat -L -f %m ~/.commitihagrc)"
+# Try GNU stat first because -f is valid in both, but semantically different, whereas -c is GNU only
+lastcheck="$(stat -L -c %Y ~/.commitihagrc 2>/dev/null || stat -L -f %m ~/.commitihagrc)"
 
 # Trigger at most once per 24h window, 7AM-7AM
 # If we have checked the repo after $check_window_start, don't do it again
 if [ "$now_hour" -ge 7 ]; then
-    check_window_start="$(date -v7H -v0M -v0S +%s)"
+    check_window_start="$(date -v7H -v0M -v0S +%s 2>/dev/null || date --date='07:00 Today' +%s)"
 else
-    check_window_start="$(date -v-1d -v7H -v0M -v0S +%s)"
+    check_window_start="$(date -v-1d -v7H -v0M -v0S +%s 2>/dev/null || date --date='07:00 Yesterday' +%s)"
 fi
 
 if [ "$lastcheck" -lt "$check_window_start" ]; then
-    echo "Doing check..."
-    echo "Setting mtime to $(date)"
     pushd "$gitdir" > /dev/null
 
     # Ask git for modified files.
@@ -70,6 +70,5 @@ if [ "$lastcheck" -lt "$check_window_start" ]; then
         fi
     fi
     # Set last checked time (= now) as mtime
-    # TODO GNU compatibility
     touch -m -t "$now_touch_formatted" ~/.commitihagrc
 fi
