@@ -5,16 +5,27 @@ shopt -s nullglob
 
 gitdir=~/.dotfiles
 now="$(date +%s)"
+now_hour="$(date -r "$now" +%k)"
+now_touch_formatted="$(date -r "$now" +%Y%m%d%H%M.%S)"
 
-# Create a config (yesterday) if missing
+# Create a config if missing
 if [ ! -f ~/.commitihagrc ]; then
-    touch -m -t "$(date -r "$((24 * 60 * 60 + 1))" +%Y%m%d%H%M.%S)" ~/.commitihagrc
+    touch -m -t "$now_touch_formatted" ~/.commitihagrc
 fi
 
-lastcheck="$(stat -f %m ~/.commitihagrc)"
+lastcheck="$(stat -L -f %m ~/.commitihagrc)"
 
-# More than 24h since last check?
-if [ $((now - lastcheck)) -gt $((24 * 60 * 60)) ]; then
+# Trigger at most once per 24h window, 7AM-7AM
+# If we have checked the repo after $check_window_start, don't do it again
+if [ "$now_hour" -ge 7 ]; then
+    check_window_start="$(date -v7H -v0M -v0S +%s)"
+else
+    check_window_start="$(date -v-1d -v7H -v0M -v0S +%s)"
+fi
+
+if [ "$lastcheck" -lt "$check_window_start" ]; then
+    echo "Doing check..."
+    echo "Setting mtime to $(date)"
     pushd "$gitdir" > /dev/null
 
     # Ask git for modified files.
@@ -24,41 +35,41 @@ if [ $((now - lastcheck)) -gt $((24 * 60 * 60)) ]; then
     # > M vimrc
     modified_files="$(git -C "$gitdir" status --porcelain=v1 | cut -c 4-)"
     if [ -n "$modified_files" ]; then
-	# Remove any prefix and suffix double-quote chars
-	# Docs on iteration and splitting: https://github.com/koalaman/shellcheck/wiki/SC2207
-	while IFS=$'\n' read -r line; do
-	    line="${line%\"}"
-	    line="${line#\"}"
-	    clean_modified_files+=("$line")
-	done <<< "$modified_files"
+        # Remove any prefix and suffix double-quote chars
+        # Docs on iteration and splitting: https://github.com/koalaman/shellcheck/wiki/SC2207
+        while IFS=$'\n' read -r line; do
+            line="${line%\"}"
+            line="${line#\"}"
+            clean_modified_files+=("$line")
+        done <<< "$modified_files"
 
-	# Find the IGNORE line in config file and get ignore glob.
-	# Example ignoring vimrc and VS Code's settings.json, keybindings.json:
-	# >$ cat ~/.commitihagrc
-	# >IGNORE=vimrc Library/Application\ Support/Code/User/*.json
-	#
-	# Info on globs and reading input: https://stackoverflow.com/a/37426132
-	IFS=$' \t\n' read -a ignore_globs < <(grep '^IGNORE=' ~/.commitihagrc | cut -c 8-)
-	IFS=''
-	for glob in "${ignore_globs[@]}"; do
-	    ignore_files+=( $glob )
-	done
+        # Find the IGNORE line in config file and get ignore glob.
+        # Example ignoring vimrc and VS Code's settings.json, keybindings.json:
+        # >$ cat ~/.commitihagrc
+        # >IGNORE=vimrc Library/Application\ Support/Code/User/*.json
+        #
+        # Info on globs and reading input: https://stackoverflow.com/a/37426132
+        IFS=$' \t\n' read -a ignore_globs < <(grep '^IGNORE=' ~/.commitihagrc | cut -c 8-)
+        IFS=''
+        for glob in "${ignore_globs[@]}"; do
+            ignore_files+=( $glob )
+        done
 
-	# Get modified files that are not in ignore_files
-	# First sort files,
-	# then incomprehensible word splitting magic
-	# then filter out the ignored lines.
-	IFS=$'\n' ignore_sorted=($(sort <<< "${ignore_files[*]}"))
-	IFS=$'\n' modified_sorted=($(sort <<< "${clean_modified_files[*]}"))
-	filtered_modified_files="$(comm -2 -3 <(printf '%s\n' "${modified_sorted[*]}") <(printf '%s\n' "${ignore_sorted[@]}"))"
+        # Get modified files that are not in ignore_files
+        # First sort files,
+        # then incomprehensible word splitting magic
+        # then filter out the ignored lines.
+        IFS=$'\n' ignore_sorted=($(sort <<< "${ignore_files[*]}"))
+        IFS=$'\n' modified_sorted=($(sort <<< "${clean_modified_files[*]}"))
+        filtered_modified_files="$(comm -2 -3 <(printf '%s\n' "${modified_sorted[*]}") <(printf '%s\n' "${ignore_sorted[@]}"))"
 
-	if [ -n "$filtered_modified_files" ]; then
-	    # Convert /home/$USER/... to ~/...
-	    gitdir_pretty=$(dirs +0)
-	    echo "❌ $gitdir_pretty contains uncommitted changes"
-	fi
+        if [ -n "$filtered_modified_files" ]; then
+            # Convert /home/$USER/... to ~/...
+            gitdir_pretty=$(dirs +0)
+            echo "❌ $gitdir_pretty contains uncommitted changes"
+        fi
     fi
     # Set last checked time (= now) as mtime
     # TODO GNU compatibility
-    touch -m -t "$(date -r "$now" +%Y%m%d%H%M.%S)" ~/.commitihagrc
+    touch -m -t "$now_touch_formatted" ~/.commitihagrc
 fi
