@@ -36,3 +36,13 @@ echo "
 # Remember to commit dotfiles
 commitihag" | tee -a ~/.bashrc ~/.zshrc
 ```
+
+Ignoring files
+-------------
+
+To ignore certain dotfiles, add `IGNORE=<globs>` to `~/.commitihagrc`. For example,
+to ignore `vimrc` and VS Code's configs:
+
+```
+IGNORE=vimrc Library/Application\ Support/Code/User/*.json
+```
