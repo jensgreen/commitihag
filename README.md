@@ -1,7 +1,8 @@
 commitihag
 ==========
 
-> swe. ***kommit ihåg*** -- eng. *remembered*
+> **kommit ihåg** [kɔmɪt ɪˈhoːɡ] *verb, ᴘsᴛ.*  
+>  ▸ remembered
 
 **commitihag** is a tiny command-line utility that helps you remember to commit your [dotfiles](https://dotfiles.github.io/).
 
